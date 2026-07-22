@@ -2,11 +2,24 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import random
+from app.db.base import Base
+import app.models
+
+from app.db.database import engine
+from sqlalchemy import text
 
 from app.words import WORDS
 class GuessRequest(BaseModel):
     guess: str
 app = FastAPI(title="Word Sprint API")
+
+@app.on_event("startup")
+def startup():
+    Base.metadata.create_all(bind=engine)
+    with engine.connect() as connection:
+        connection.execute(text("SELECT 1"))
+    print("✅ Connected to PostgreSQL!")
+
 
 app.add_middleware(
     CORSMiddleware,
