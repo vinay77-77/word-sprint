@@ -1,35 +1,38 @@
 import GameBoard from "../components/GameBoard";
 import { useState, useEffect } from "react";
-import { WORDS } from "../words";
 import { getFeedback } from "../feedback";
+
+function createEmptyBoard() {
+    return Array(6)
+        .fill(null)
+        .map(() => Array(5).fill(""));
+}
+
+function createEmptyColors() {
+    return Array(6)
+        .fill(null)
+        .map(() => Array(5).fill(""));
+}
+
 
 export default function Game() {
 
-    function getRandomWord() {
-    const index = Math.floor(Math.random() * WORDS.length);
-    return WORDS[index];
-}
-   const [board, setBoard] = useState([
-    ["", "", "", "", ""],
-    ["", "", "", "", ""],
-    ["", "", "", "", ""],
-    ["", "", "", "", ""],
-    ["", "", "", "", ""],
-    ["", "", "", "", ""],
-]);
-    const [colors, setColors] = useState(
-    Array(6)
-        .fill(null)
-        .map(() => Array(5).fill(""))
-);
+    const [board, setBoard] = useState(createEmptyBoard());
+
+    const [colors, setColors] = useState(createEmptyColors());
+
     const [currentColumn, setCurrentColumn] = useState(0);
     const [currentRow, setCurrentRow] = useState(0);
     const [score, setScore] = useState(0);
-    const [targetWord, setTargetWord] = useState(getRandomWord());
     const [timeLeft, setTimeLeft] = useState(180);
     const [gameOver, setGameOver] = useState(false);
-    
-       function handleKeyDown(event) {
+    const [error, setError] = useState("");
+    const username = localStorage.getItem("username") || "Player";
+    const [targetWord, setTargetWord] = useState("");
+
+
+
+      async function handleKeyDown(event) {
         if (gameOver) {
         return;
     }
@@ -56,18 +59,20 @@ export default function Game() {
 
    // ENTER
    if (key === "ENTER") {
+    setError("");
 
     if (currentColumn < 5) {
-        alert("Word must be 5 letters long!");
+    setError("Word must be 5 letters long!");
         return;
     }
 
     const guess = board[currentRow].join("");
 
-    if (!WORDS.includes(guess)) {
-        alert("Not in word list!");
-        return;
-    }
+    const isValid = await validateGuess(guess);
+    if (!isValid) {
+    setError("Not in word list!");
+    return;
+   }
 
     const feedback = getFeedback(guess, targetWord);
     const newColors = colors.map(row => [...row]);
@@ -77,9 +82,9 @@ export default function Game() {
 
    if (guess === targetWord) {
 
-    setScore(score + 10);
+    setScore(previousScore => previousScore + 10);
 
-    setTargetWord(getRandomWord());
+    await fetchTargetWord();
 
     resetBoard();
 
@@ -87,7 +92,7 @@ export default function Game() {
     }  
 
     if (currentRow === 5) {
-        alert(`Game over! The word was ${targetWord}`);
+        setGameOver(true);
         return;
     }
 
@@ -111,36 +116,70 @@ export default function Game() {
     newBoard[currentRow][currentColumn] = key;
 
     setBoard(newBoard);
-
+    setError("");
     setCurrentColumn(currentColumn + 1);
 }
+
+   async function fetchTargetWord() {
+    setTargetWord("");
+    const response = await fetch("http://127.0.0.1:8000/word");
+    const data = await response.json();
+    setTargetWord(data.word);
+ }
+
+  useEffect(() => {
+    fetchTargetWord();
+   }, []);
    useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
-
     return () => {
         window.removeEventListener("keydown", handleKeyDown);
     };
-
 }, [board, colors, currentColumn, currentRow]);
 
 
+
+async function validateGuess(guess) {
+
+    const response = await fetch("http://127.0.0.1:8000/validate", {
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+            guess: guess,
+        }),
+    });
+
+    const data = await response.json();
+    return data.valid;
+}
+
+
+
+async function restartGame() {
+
+    resetBoard();
+
+    setScore(0);
+    setTimeLeft(GAME_TIME);
+    setGameOver(false);
+    setError("");
+    await fetchTargetWord();
+}
+
+
     function resetBoard() {
-
-    setBoard(
-        Array(6)
-            .fill(null)
-            .map(() => Array(5).fill(""))
-    );
-
-    setColors(
-        Array(6)
-            .fill(null)
-            .map(() => Array(5).fill(""))
-    );
+    setBoard(createEmptyBoard());
+    setColors(createEmptyColors());
 
     setCurrentRow(0);
     setCurrentColumn(0);
 }
+
+
     useEffect(() => {
 
     if (gameOver) {
@@ -171,28 +210,79 @@ const seconds = timeLeft % 60;
 const formattedTime =
     `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
+    if (!targetWord) {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <h2 className="text-2xl font-semibold">
+                Loading game...
+            </h2>
+        </div>
+    );
+ }
+
     return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-8">
 
-        <h1 className="text-4xl font-bold">
-            Word Sprint
-        </h1>
-
-        <h2>
-            Score: {score}
-        </h2>
-
-        {
-    gameOver ? (
         <div className="text-center">
-            <h2 className="text-3xl font-bold">
-                Game Over!
-            </h2>
+    <h1 className="text-5xl font-extrabold tracking-tight text-gray-900">
+        Word Sprint
+    </h1>
 
-            <p className="mt-4">
-                Final Score: {score}
-            </p>
-        </div>
+    <p className="mt-2 text-gray-500">
+        Solve as many words as you can before time runs out.
+    </p>
+</div>
+
+ <div className="flex gap-6">
+
+    <div className="w-36 rounded-xl border border-gray-200 bg-white shadow-sm p-4 text-center">
+        <p className="text-xs uppercase tracking-wide text-gray-500">
+            Time
+        </p>
+
+        <p className="mt-1 text-3xl font-bold">
+            {formattedTime}
+        </p>
+    </div>
+
+    <div className="w-36 rounded-xl border border-gray-200 bg-white shadow-sm p-4 text-center">
+        <p className="text-xs uppercase tracking-wide text-gray-500">
+            Score
+        </p>
+
+        <p className="mt-1 text-3xl font-bold">
+            {score}
+        </p>
+    </div>
+
+ </div>
+
+{!gameOver && error && (
+    <p className="text-red-500 font-medium">
+        {error}
+    </p>
+)}
+
+{
+    gameOver ? (
+      <div className="text-center">
+
+    <h2 className="text-3xl font-bold">
+        Game Over!
+    </h2>
+
+    <p className="mt-4">
+        Final Score: {score}
+    </p>
+
+    <button
+        onClick={restartGame}
+        className="mt-6 bg-blue-600 text-white px-4 py-2 rounded"
+    >
+        Play Again
+    </button>
+
+</div>
     ) : (
         <GameBoard
             board={board}
@@ -200,7 +290,6 @@ const formattedTime =
         />
     )
 }
-
     </div>
-  );
+);
 }

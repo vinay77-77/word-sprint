@@ -14,14 +14,18 @@ export default function GameBoard({ board, colors }) {
                         <div
                             key={columnIndex}
                             className={`
-                                w-14 h-14
+                                w-16
+                                h-16
+                                rounded-lg
                                 border-2
-                                rounded
                                 flex
                                 items-center
                                 justify-center
                                 text-2xl
                                 font-bold
+                                transition-all
+                                duration-200
+                                hover:scale-105
                                 ${
                                     colors[rowIndex][columnIndex] === "green"
                                         ? "bg-green-500 text-white border-green-500"
@@ -29,7 +33,7 @@ export default function GameBoard({ board, colors }) {
                                         ? "bg-yellow-500 text-white border-yellow-500"
                                         : colors[rowIndex][columnIndex] === "gray"
                                         ? "bg-gray-500 text-white border-gray-500"
-                                        : "border-gray-400"
+                                        : "bg-white border-gray-300"
                                 }
                             `}
                         >

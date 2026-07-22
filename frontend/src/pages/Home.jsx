@@ -11,7 +11,8 @@ export default function Home() {
             return;
         }
 
-        navigate("/game");
+       localStorage.setItem("username", username);
+       navigate("/game");
     }
 
     return (
