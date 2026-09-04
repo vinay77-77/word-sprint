@@ -81,13 +81,9 @@ export default function Game() {
     setColors(newColors);
 
    if (guess === targetWord) {
-
     setScore(previousScore => previousScore + 10);
-
     await fetchTargetWord();
-
     resetBoard();
-
     return;
     }  
 
@@ -120,17 +116,25 @@ export default function Game() {
     setCurrentColumn(currentColumn + 1);
 }
 
-   async function fetchTargetWord() {
+    async function fetchTargetWord() {
     setTargetWord("");
-    const response = await fetch("http://127.0.0.1:8000/word");
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/word`);
     const data = await response.json();
     setTargetWord(data.word);
  }
 
-  useEffect(() => {
+    useEffect(() => {
+    if (gameOver) {
+        saveGame();
+    }
+}, [gameOver]);
+
+
+    useEffect(() => {
     fetchTargetWord();
    }, []);
-   useEffect(() => {
+
+    useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => {
         window.removeEventListener("keydown", handleKeyDown);
@@ -138,10 +142,16 @@ export default function Game() {
 }, [board, colors, currentColumn, currentRow]);
 
 
+    useEffect(() => {
+    if (gameOver) {
+        saveGame();
+    }
+}, [gameOver]);
+
 
 async function validateGuess(guess) {
 
-    const response = await fetch("http://127.0.0.1:8000/validate", {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/validate`, {
         method: "POST",
 
         headers: {
@@ -157,12 +167,34 @@ async function validateGuess(guess) {
     return data.valid;
 }
 
+async function saveGame() {
+    const username = localStorage.getItem("username") || "Player";
 
+    try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/games`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                username: username,
+                score: score,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to save game");
+        }
+
+        const data = await response.json();
+        console.log(data);
+    } catch (error) {
+        console.error("Error saving game:", error);
+    }
+}
 
 async function restartGame() {
-
     resetBoard();
-
     setScore(0);
     setTimeLeft(GAME_TIME);
     setGameOver(false);
@@ -187,7 +219,6 @@ async function restartGame() {
     }
 
     const timer = setInterval(() => {
-
         setTimeLeft(previousTime => {
 
             if (previousTime <= 1) {
