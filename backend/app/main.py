@@ -9,12 +9,14 @@ from app.db.database import engine
 from sqlalchemy import text
 
 from app.api.games import router as games_router
+from app.api.leaderboard import router as leaderboard_router
 
 from app.words import WORDS
 class GuessRequest(BaseModel):
     guess: str
 app = FastAPI(title="Word Sprint API")
 app.include_router(games_router)
+app.include_router(leaderboard_router)
 
 @app.on_event("startup")
 def startup():

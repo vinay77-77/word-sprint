@@ -1,4 +1,5 @@
 import GameBoard from "../components/GameBoard";
+import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getFeedback } from "../feedback";
 
@@ -16,6 +17,7 @@ function createEmptyColors() {
 
 
 export default function Game() {
+    const GAME_TIME = 180;
 
     const [board, setBoard] = useState(createEmptyBoard());
 
@@ -142,13 +144,7 @@ export default function Game() {
 }, [board, colors, currentColumn, currentRow]);
 
 
-    useEffect(() => {
-    if (gameOver) {
-        saveGame();
-    }
-}, [gameOver]);
-
-
+    
 async function validateGuess(guess) {
 
     const response = await fetch(`${import.meta.env.VITE_API_URL}/validate`, {
@@ -252,7 +248,13 @@ const formattedTime =
  }
 
     return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-8 relative">
+        <Link
+    to="/"
+    className="absolute left-6 top-6 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+    >
+    ← Home
+    </Link>
 
         <div className="text-center">
     <h1 className="text-5xl font-extrabold tracking-tight text-gray-900">
@@ -296,22 +298,41 @@ const formattedTime =
 
 {
     gameOver ? (
-      <div className="text-center">
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
 
-    <h2 className="text-3xl font-bold">
+    <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
+        Round Complete
+    </p>
+
+    <h2 className="mt-2 text-3xl font-bold text-gray-900">
         Game Over!
     </h2>
 
-    <p className="mt-4">
-        Final Score: {score}
+    <p className="mt-4 text-gray-500">
+        You scored
     </p>
 
-    <button
-        onClick={restartGame}
-        className="mt-6 bg-blue-600 text-white px-4 py-2 rounded"
-    >
-        Play Again
-    </button>
+    <p className="mt-1 text-5xl font-extrabold text-gray-900">
+        {score}
+    </p>
+
+    <div className="mt-8 flex justify-center gap-3">
+
+        <button
+            onClick={restartGame}
+            className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white transition hover:bg-blue-700"
+        >
+            Play Again
+        </button>
+
+        <a
+            href="/leaderboard"
+            className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 font-medium text-gray-700 transition hover:bg-gray-50"
+        >
+            Leaderboard
+        </a>
+
+    </div>
 
 </div>
     ) : (

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function Home() {
     const [username, setUsername] = useState("");
@@ -37,6 +38,14 @@ export default function Home() {
             >
                 Start Game
             </button>
+            
+            <Link
+        to="/leaderboard"
+        className="inline-block rounded-lg bg-blue-600 px-5 py-2.5 font-medium text-white transition hover:bg-blue-700"
+        >
+        View Leaderboard
+        </Link>
+        
         </div>
     );
 }
