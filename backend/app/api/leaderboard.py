@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -15,7 +16,7 @@ router = APIRouter()
 def get_leaderboard(
     db: Session = Depends(get_db)
 ):
-    today = datetime.utcnow().date()
+    today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
 
     results = (
         db.query(
